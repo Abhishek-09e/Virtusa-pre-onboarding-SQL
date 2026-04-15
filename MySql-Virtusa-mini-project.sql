@@ -2,6 +2,7 @@
 CREATE DATABASE IF NOT EXISTS SwiftShip;
 USE SwiftShip;
 
+
 -- Partners table
 CREATE TABLE Partners (PartnerID INT PRIMARY KEY,PartnerName VARCHAR(100),ContactInfo VARCHAR(200));
 
@@ -16,16 +17,16 @@ CREATE TABLE Shipments (
     FOREIGN KEY (PartnerID) REFERENCES Partners(PartnerID)
 );
 
--- DeliveryLogs table
+-- Delivery Logs 
 CREATE TABLE DeliveryLogs (
     LogID INT PRIMARY KEY,
     ShipmentID INT,
-    Status VARCHAR(50), -- e.g., 'Successful', 'Returned', 'Lost'
+    Status VARCHAR(50), 
     LogDate DATE,
     FOREIGN KEY (ShipmentID) REFERENCES Shipments(ShipmentID)
 );
 
--- Insert Partners
+--Partners
 INSERT INTO Partners VALUES 
 (1,'BlueDart','support@bluedart.com'),
 (2,'Delhivery','help@delhivery.com'),
@@ -36,7 +37,7 @@ INSERT INTO Partners VALUES
 
 
 
--- Insert Shipments (unique IDs, Indian cities)
+-- Shipments 
 INSERT INTO Shipments VALUES
 (201, 1, '2026-03-01','2026-03-05','2026-03-06','Mumbai'),
 (202, 2, '2026-03-02','2026-03-06','2026-03-08','Delhi'),
@@ -51,7 +52,7 @@ INSERT INTO Shipments VALUES
 
 
 
--- Insert DeliveryLogs (statuses)
+--DeliveryLogs
 INSERT INTO DeliveryLogs VALUES
 (3001,201,'Successful','2026-03-06'),
 (3002,202,'Returned','2026-03-08'),
