@@ -1,6 +1,11 @@
 CREATE DATABASE IF NOT EXISTS SwiftShip;
 USE SwiftShip;
-CREATE TABLE Partners (PartnerID INT PRIMARY KEY,PartnerName VARCHAR(100),ContactInfo VARCHAR(200));
+
+CREATE TABLE Partners (
+    PartnerID INT PRIMARY KEY,
+    PartnerName VARCHAR(100),
+    ContactInfo VARCHAR(200)
+);
 
 CREATE TABLE Shipments (
     ShipmentID INT PRIMARY KEY,
@@ -15,12 +20,13 @@ CREATE TABLE Shipments (
 CREATE TABLE DeliveryLogs (
     LogID INT PRIMARY KEY,
     ShipmentID INT,
-    Status VARCHAR(50), 
+    Status VARCHAR(50),
     LogDate DATE,
     FOREIGN KEY (ShipmentID) REFERENCES Shipments(ShipmentID)
 );
 
-INSERT INTO Partners VALUES 
+
+INSERT INTO Partners VALUES
 (1,'BlueDart','support@bluedart.com'),
 (2,'Delhivery','help@delhivery.com'),
 (3,'DTDC','info@dtdc.com'),
@@ -29,17 +35,16 @@ INSERT INTO Partners VALUES
 (6,'FedEx','contact@fedex.com');
 
 INSERT INTO Shipments VALUES
-(201, 1, '2026-03-01','2026-03-05','2026-03-06','Mumbai'),
-(202, 2, '2026-03-02','2026-03-06','2026-03-08','Delhi'),
-(203, 3, '2026-03-03','2026-03-07','2026-03-07','Bengaluru'),
-(204, 4, '2026-03-04','2026-03-08','2026-03-09','Chennai'),
-(205, 2, '2026-03-05','2026-03-09','2026-03-09','Hyderabad'),
-(206, 1, '2026-03-06','2026-03-10','2026-03-12','Kolkata'),
-(207, 5, '2026-03-07','2026-03-11','2026-03-13','Jaipur'),
-(208, 6, '2026-03-08','2026-03-12','2026-03-12','Lucknow'),
-(209, 3, '2026-03-09','2026-03-13','2026-03-14','Pune'),
-(210, 4, '2026-03-10','2026-03-14','2026-03-15','Ahmedabad');
-
+(201,1,'2026-03-01','2026-03-05','2026-03-06','Mumbai'),
+(202,2,'2026-03-02','2026-03-06','2026-03-08','Delhi'),
+(203,3,'2026-03-03','2026-03-07','2026-03-07','Bengaluru'),
+(204,4,'2026-03-04','2026-03-08','2026-03-09','Chennai'),
+(205,2,'2026-03-05','2026-03-09','2026-03-09','Hyderabad'),
+(206,1,'2026-03-06','2026-03-10','2026-03-12','Kolkata'),
+(207,5,'2026-03-07','2026-03-11','2026-03-13','Jaipur'),
+(208,6,'2026-03-08','2026-03-12','2026-03-12','Lucknow'),
+(209,3,'2026-03-09','2026-03-13','2026-03-14','Pune'),
+(210,4,'2026-03-10','2026-03-14','2026-03-15','Ahmedabad');
 
 INSERT INTO DeliveryLogs VALUES
 (3001,201,'Successful','2026-03-06'),
@@ -54,8 +59,68 @@ INSERT INTO DeliveryLogs VALUES
 (3010,210,'Successful','2026-03-15');
 
 
+SELECT
+    ShipmentID,
+    PartnerID,
+    PromisedDate,
+    ActualDeliveryDate,
+    DestinationCity
+FROM Shipments
+WHERE ActualDeliveryDate > PromisedDate;
 
--- Check tables
-SELECT * FROM Partners;
-SELECT * FROM Shipments;
-SELECT * FROM DeliveryLogs;
+SELECT
+    p.PartnerName,
+    COUNT(CASE WHEN d.Status='Successful' THEN 1 END) AS SuccessfulDeliveries,
+    COUNT(CASE WHEN d.Status='Returned' THEN 1 END) AS ReturnedDeliveries
+FROM Partners p
+JOIN Shipments s
+    ON p.PartnerID=s.PartnerID
+JOIN DeliveryLogs d
+    ON s.ShipmentID=d.ShipmentID
+GROUP BY p.PartnerName
+ORDER BY SuccessfulDeliveries DESC;
+
+SELECT
+    DestinationCity,
+    COUNT(*) AS TotalOrders
+FROM Shipments
+WHERE OrderDate >= CURDATE() - INTERVAL 30 DAY
+GROUP BY DestinationCity
+ORDER BY TotalOrders DESC
+LIMIT 1;
+
+SELECT
+    p.PartnerName,
+    COUNT(s.ShipmentID) AS TotalShipments,
+
+    SUM(
+        CASE
+            WHEN s.ActualDeliveryDate > s.PromisedDate
+            THEN 1
+            ELSE 0
+        END
+    ) AS DelayedShipments,
+
+    COUNT(CASE WHEN d.Status='Successful' THEN 1 END)
+        AS SuccessfulDeliveries,
+
+    COUNT(CASE WHEN d.Status='Returned' THEN 1 END)
+        AS ReturnedDeliveries,
+
+    ROUND(
+        (COUNT(CASE WHEN d.Status='Successful' THEN 1 END)
+         * 100.0) /
+        COUNT(s.ShipmentID),
+        2
+    ) AS SuccessRate
+
+FROM Partners p
+JOIN Shipments s
+    ON p.PartnerID=s.PartnerID
+JOIN DeliveryLogs d
+    ON s.ShipmentID=d.ShipmentID
+
+GROUP BY p.PartnerID, p.PartnerName
+
+ORDER BY DelayedShipments ASC,
+         SuccessRate DESC;
